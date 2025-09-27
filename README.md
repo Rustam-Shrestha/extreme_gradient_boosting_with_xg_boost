@@ -539,3 +539,511 @@ print(f"Accuracy: {((1 - cv_results['test-error-mean']).iloc[-1]):.4f}")
 
 Code Example: XGBoost with AUC Metric
 To evaluate the model using the Area Under the Curve (AUC) metric:
+
+
+
+###day 6
+Linear Base Learners in XGBoost
+This document provides a comprehensive overview of using linear base learners in XGBoost, focusing on regression tasks with the Boston Housing dataset (or Ames Housing dataset as referenced). It includes code examples, explanations of regularization, cross-validation, and visualization techniques, tailored for GRE preparation. The content is structured to cover the provided code snippets and theoretical concepts, ensuring clarity and conciseness.
+Introduction to XGBoost Base Learners
+XGBoost (eXtreme Gradient Boosting) is a powerful machine learning algorithm that typically uses decision trees as base learners (booster="gbtree"). However, it also supports linear base learners (booster="gblinear"), which are generalized linear models. Linear base learners are less flexible than tree-based models but are faster and more interpretable, making them suitable for certain tasks.
+Base Learners in XGBoost
+
+Tree-Based Models (gbtree):
+Default in XGBoost.
+Uses decision trees built sequentially to capture non-linear patterns.
+Ideal for complex, structured/tabular data.
+
+
+Linear Models (gblinear):
+Uses generalized linear regression as base learners.
+Faster and more interpretable but less capable of modeling non-linear relationships.
+Regularized with L1 (alpha) and L2 (lambda) penalties.
+
+
+
+Regularization in XGBoost
+Regularization helps prevent overfitting by penalizing model complexity. The objective function in XGBoost is:
+Obj = Loss + Ω(f)
+
+Loss: Measures prediction error (e.g., squared error for regression).
+Ω(f): Regularization term to penalize complex models.
+
+Key Regularization Parameters
+
+Gamma (γ):
+Applies to tree-based models.
+Specifies minimum loss reduction required for a node to split.
+Higher values lead to fewer splits, reducing overfitting.
+
+
+Alpha (α) – L1 Regularization:
+Applies to linear models and tree leaf weights.
+Penalizes the absolute value of weights, promoting sparsity (many weights become zero).
+Useful for feature selection and simpler models.
+
+
+Lambda (λ) – L2 Regularization:
+Applies to linear models and tree leaf weights.
+Penalizes the square of weights, shrinking them smoothly without forcing them to zero.
+Prevents large weights, reducing overfitting.
+
+
+
+Regularization Comparison
+
+
+
+Feature
+L1 Regularization (Alpha)
+L2 Regularization (Lambda)
+
+
+
+Penalty Term
+Sum of absolute weights
+Sum of squared weights
+
+
+Formula
+`α *
+w
+
+
+Effect on Weights
+Drives some weights to zero
+Shrinks weights but keeps them
+
+
+Resulting Model
+Sparse (feature selection)
+Smooth (all features used)
+
+
+Use Case
+Ignoring irrelevant features
+Reducing impact of all features
+
+
+Regression with XGBoost
+XGBoost supports regression tasks using objectives like:
+
+reg:squarederror: Minimizes squared error, penalizing large errors heavily.
+reg:logistic: For probabilistic outputs (less common in regression).
+reg:pseudohubererror: Robust to outliers.
+
+Evaluation Metrics for Regression
+
+Root Mean Squared Error (RMSE):
+Formula: √(1/n * Σ(y_i - ŷ_i)²)
+Measures average magnitude of errors, sensitive to outliers.
+Use case: When large errors are undesirable (e.g., financial forecasting).
+
+
+Mean Absolute Error (MAE):
+Formula: 1/n * Σ|y_i - ŷ_i|
+Measures average absolute difference, robust to outliers.
+Use case: When errors should be interpreted in units of the target.
+
+
+R² Score:
+Measures proportion of variance explained by the model.
+Ranges from 0 to 1 (higher is better).
+
+
+
+Code Examples
+Below are Python code snippets for implementing XGBoost regression with tree-based and linear base learners, cross-validation, and visualization, using the Boston Housing dataset (or Ames Housing dataset as referenced).
+1. XGBoost Regressor with Tree-Based Learners (Scikit-Learn API)
+This example uses the scikit-learn-compatible API to train a tree-based XGBoost regressor and evaluate performance using MAE, MSE, and R².
+import pandas as pd
+import xgboost as xgb
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+# Load the dataset (assuming boston_housing.csv is available)
+boston_data = pd.read_csv("boston_housing.csv")
+
+# Separate features (X) and target (y)
+X = boston_data.iloc[:, :-1]  # All columns except the last
+y = boston_data.iloc[:, -1]   # Last column as target
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
+
+# Initialize the XGBoost regressor
+xg_reg = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=10, seed=123)
+
+# Train the model
+xg_reg.fit(X_train, y_train)
+
+# Make predictions on the test set
+preds = xg_reg.predict(X_test)
+
+# Evaluate model performance
+mae = mean_absolute_error(y_test, preds)
+mse = mean_squared_error(y_test, preds)
+r2 = r2_score(y_test, preds)
+
+# Print accuracy metrics
+print("Model Performance Metrics:")
+print(f"Mean Absolute Error (MAE): {mae:.2f}")
+print(f"Mean Squared Error (MSE): {mse:.2f}")
+print(f"R² Score: {r2:.2f}")
+
+2. XGBoost with Linear Base Learners (Native API)
+This example uses the native XGBoost API with booster="gblinear" to train a regularized linear regression model.
+import pandas as pd
+import xgboost as xgb
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+import numpy as np
+
+# Load the dataset
+boston_data = pd.read_csv("boston_housing.csv")
+
+# Separate features (X) and target (y)
+X = boston_data.iloc[:, :-1]
+y = boston_data.iloc[:, -1]
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
+
+# Convert to DMatrix
+DM_train = xgb.DMatrix(data=X_train, label=y_train)
+DM_test = xgb.DMatrix(data=X_test, label=y_test)
+
+# Create parameter dictionary with linear booster
+params = {"booster": "gblinear", "objective": "reg:squarederror"}
+
+# Train the model
+xg_reg = xgb.train(params=params, dtrain=DM_train, num_boost_round=5)
+
+# Predict on the test set
+preds = xg_reg.predict(DM_test)
+
+# Compute and print RMSE
+rmse = np.sqrt(mean_squared_error(y_test, preds))
+print(f"RMSE: {rmse:.2f}")
+
+3. Cross-Validation with Tree-Based Learners (RMSE Metric)
+This example performs 4-fold cross-validation using the native API to evaluate a tree-based model with RMSE.
+import pandas as pd
+import xgboost as xgb
+
+# Load the dataset
+boston_data = pd.read_csv("boston_housing.csv")
+
+# Separate features (X) and target (y)
+X = boston_data.iloc[:, :-1]
+y = boston_data.iloc[:, -1]
+
+# Create the DMatrix
+housing_dmatrix = xgb.DMatrix(data=X, label=y)
+
+# Create the parameter dictionary
+params = {"objective": "reg:squarederror", "max_depth": 4}
+
+# Perform 4-fold cross-validation
+cv_results = xgb.cv(dtrain=housing_dmatrix, params=params, nfold=4, num_boost_round=5, 
+                    metrics="rmse", as_pandas=True, seed=123)
+
+# Print cv_results
+print(cv_results)
+
+# Extract and print final boosting round RMSE
+print("Final RMSE:", cv_results["test-rmse-mean"].tail(1).values[0])
+
+4. Cross-Validation with Tree-Based Learners (MAE Metric)
+This example uses MAE as the evaluation metric for cross-validation.
+import pandas as pd
+import xgboost as xgb
+
+# Load the dataset
+boston_data = pd.read_csv("boston_housing.csv")
+
+# Separate features (X) and target (y)
+X = boston_data.iloc[:, :-1]
+y = boston_data.iloc[:, -1]
+
+# Create the DMatrix
+housing_dmatrix = xgb.DMatrix(data=X, label=y)
+
+# Create the parameter dictionary
+params = {"objective": "reg:squarederror", "max_depth": 4}
+
+# Perform 4-fold cross-validation with MAE
+cv_results = xgb.cv(dtrain=housing_dmatrix, params=params, nfold=4, num_boost_round=5, 
+                    metrics="mae", as_pandas=True, seed=123)
+
+# Print cv_results
+print(cv_results)
+
+# Extract and print final boosting round MAE
+print("Final MAE:", cv_results["test-mae-mean"].tail(1).values[0])
+
+5. Tuning L2 Regularization (Lambda)
+This example evaluates the effect of varying L2 regularization strength (lambda) on model performance using cross-validation.
+import pandas as pd
+import xgboost as xgb
+
+# Load the dataset
+boston_data = pd.read_csv("boston_housing.csv")
+
+# Separate features (X) and target (y)
+X = boston_data.iloc[:, :-1]
+y = boston_data.iloc[:, -1]
+
+# Create the DMatrix
+housing_dmatrix = xgb.DMatrix(data=X, label=y)
+
+# Define regularization parameters to test
+reg_params = [1, 10, 100]
+
+# Create initial parameter dictionary
+params = {"objective": "reg:squarederror", "max_depth": 3}
+
+# Create an empty list for storing RMSEs
+rmses_l2 = []
+
+# Iterate over reg_params
+for reg in reg_params:
+    # Update L2 strength
+    params["lambda"] = reg
+    # Perform cross-validation
+    cv_results_rmse = xgb.cv(dtrain=housing_dmatrix, params=params, nfold=2, 
+                             num_boost_round=5, metrics="rmse", as_pandas=True, seed=123)
+    # Append best RMSE (final round)
+    rmses_l2.append(cv_results_rmse["test-rmse-mean"].tail(1).values[0])
+
+# Print best RMSE per L2 parameter
+print("Best RMSE as a function of L2:")
+print(pd.DataFrame(list(zip(reg_params, rmses_l2)), columns=["L2", "RMSE"]))
+
+6. Visualizing XGBoost Trees
+This example visualizes individual trees in an XGBoost model to understand their structure.
+import pandas as pd
+import xgboost as xgb
+import matplotlib.pyplot as plt
+
+# Load the dataset
+boston_data = pd.read_csv("boston_housing.csv")
+
+# Separate features (X) and target (y)
+X = boston_data.iloc[:, :-1]
+y = boston_data.iloc[:, -1]
+
+# Create the DMatrix
+housing_dmatrix = xgb.DMatrix(data=X, label=y)
+
+# Create the parameter dictionary
+params = {"objective": "reg:squarederror", "max_depth": 2}
+
+# Train the model
+xg_reg = xgb.train(params=params, dtrain=housing_dmatrix, num_boost_round=10)
+
+# Plot the first tree
+xgb.plot_tree(xg_reg, num_trees=0)
+plt.show()
+
+# Plot the fifth tree
+xgb.plot_tree(xg_reg, num_trees=4)
+plt.show()
+
+# Plot the last tree sideways
+xgb.plot_tree(xg_reg, num_trees=9, rankdir="LR")
+plt.show()
+
+7. Visualizing Feature Importances
+This example plots feature importances to identify which features contribute most to predictions.
+import pandas as pd
+import xgboost as xgb
+import matplotlib.pyplot as plt
+
+# Load the dataset
+boston_data = pd.read_csv("boston_housing.csv")
+
+# Separate features (X) and target (y)
+X = boston_data.iloc[:, :-1]
+y = boston_data.iloc[:, -1]
+
+# Create the DMatrix
+housing_dmatrix = xgb.DMatrix(data=X, label=y)
+
+# Create the parameter dictionary
+params = {"objective": "reg:squarederror", "max_depth": 4}
+
+# Train the model
+xg_reg = xgb.train(params=params, dtrain=housing_dmatrix, num_boost_round=10)
+
+# Plot feature importances
+xgb.plot_importance(xg_reg)
+plt.show()
+
+Theoretical Reinforcement
+Boosting Overview
+
+Definition: An ensemble technique that sequentially combines weak learners (e.g., shallow decision trees) to create a strong learner, focusing on correcting errors from previous learners.
+Mechanism:
+Train a weak learner on the dataset.
+Identify misclassified or poorly predicted samples and increase their weights.
+Train subsequent learners on weighted data.
+Combine predictions via weighted voting (classification) or summing (regression).
+
+
+Applications:
+Credit scoring, fraud detection, customer churn prediction, predictive maintenance.
+
+
+Features:
+Sequential training.
+Focuses on difficult examples.
+High accuracy, low bias.
+
+
+Pros:
+High performance, especially on structured data.
+Reduces bias by focusing on errors.
+
+
+Cons:
+Sensitive to noisy data.
+Requires careful tuning to avoid overfitting.
+
+
+Nuances:
+Learning Rate (eta): Controls the contribution of each learner. Lower values require more rounds but improve stability.
+Overfitting Risk: Too many boosting rounds can lead to overfitting, mitigated by early stopping or regularization.
+Hyperparameter Tuning: Critical for balancing performance and generalization.
+
+
+
+XGBoost Specifics
+
+Definition: An optimized gradient boosting framework that uses decision trees (or linear models) as base learners, minimizing a loss function via gradient descent.
+Mechanism:
+Start with an initial prediction (e.g., mean for regression).
+Compute residuals (errors between actual and predicted values).
+Fit a shallow tree to predict residuals.
+Update predictions by adding the tree’s output, scaled by a learning rate.
+Repeat until a stopping criterion is met.
+
+
+Applications:
+House price prediction, sales forecasting, disease diagnosis, search ranking.
+
+
+Features:
+Default booster: gbtree (decision trees).
+Supports gblinear for linear models.
+Regularization (L1, L2) to prevent overfitting.
+Handles missing values internally.
+Parallelized for speed.
+Supports early stopping and custom loss functions.
+
+
+Pros:
+High accuracy on tabular data.
+Robust to missing data.
+Highly customizable.
+
+
+Cons:
+Complex hyperparameter tuning.
+Less interpretable than simpler models.
+Not suited for unstructured data (e.g., images, text).
+
+
+Nuances:
+Learning Rate: Balances speed and stability. Typical range: 0.01–0.3.
+Tree Depth: Shallow trees (3–6) reduce overfitting.
+Column Sampling: Reduces tree correlation, improving generalization.
+Feature Importance: Based on split frequency or loss reduction, but can be misleading with correlated features.
+
+
+
+Cross-Validation in XGBoost
+
+Definition: A technique to evaluate model generalization by splitting data into K folds, training on K-1 folds, and testing on the remaining fold, repeated K times.
+Purpose:
+Provides a robust estimate of performance on unseen data.
+Reduces overfitting risk compared to a single train-test split.
+
+
+XGBoost’s Native Cross-Validation (xgb.cv):
+Uses DMatrix for efficient data handling.
+Outputs metrics (e.g., RMSE, MAE) per boosting round.
+Supports early stopping to halt training when performance plateaus.
+
+
+Why Use xgb.cv?:
+Built-in efficiency and detailed diagnostics.
+Avoids manual splitting and looping.
+Ideal for hyperparameter tuning.
+
+
+
+Practical Considerations
+
+When to Use Linear Base Learners:
+Suitable for datasets with linear relationships or when interpretability is prioritized.
+Faster than tree-based models but less flexible for complex patterns.
+
+
+When to Use Tree-Based Learners:
+Preferred for most tabular data tasks due to their ability to model non-linear relationships.
+Better for datasets with complex interactions between features.
+
+
+Regularization Tuning:
+Use cross-validation to test different values of alpha, lambda, and gamma.
+Balance between underfitting (too much regularization) and overfitting (too little regularization).
+
+
+Feature Importance:
+Visualizing feature importance helps identify key predictors but should be interpreted cautiously due to potential feature correlations.
+
+
+Visualization:
+Tree plots (xgb.plot_tree) show the structure of individual trees, aiding in understanding model decisions.
+Feature importance plots (xgb.plot_importance) highlight which features drive predictions.
+
+
+
+Notes for GRE Preparation
+
+Key Concepts to Master:
+Understand the difference between tree-based (gbtree) and linear (gblinear) base learners.
+Know how regularization parameters (alpha, lambda, gamma) affect model complexity and performance.
+Be familiar with regression metrics (RMSE, MAE, R²) and their interpretations.
+Understand cross-validation and its role in assessing model generalization.
+
+
+Coding Skills:
+Practice using both scikit-learn and native XGBoost APIs.
+Be comfortable with DMatrix for the native API and handling data preprocessing (e.g., splitting, encoding).
+Learn to interpret cross-validation outputs and feature importance plots.
+
+
+Common Pitfalls:
+Overfitting: Avoid excessive boosting rounds or overly complex trees.
+Underfitting: Ensure sufficient model capacity (e.g., reasonable tree depth or number of estimators).
+Misinterpreting Feature Importance: Cross-check with domain knowledge or SHAP values for reliability.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
