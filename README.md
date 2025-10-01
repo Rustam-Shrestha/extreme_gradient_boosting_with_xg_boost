@@ -1326,6 +1326,84 @@ Day 3 of the Learning Utsav Challenge deepened my understanding of hyperparamete
 
 Learning Utsav 2025 Day 3 | Machine Learning | Data Science | XGBoost | Hyperparameter Tuning | Preprocessing | Festival of Learning | LUD3
 
+# Day 4: Machine Learning Pipelines and Model Tuning
+
+## Overview
+
+Day 4 focused on building robust machine learning workflows using pipelines, handling missing data, encoding features, and tuning model hyperparameters. The goal was to create reproducible, scalable models using scikit-learn and XGBoost across multiple datasets.
+
+---
+
+## Ames Housing Case Study
+
+### *Pipeline Construction*
+
+- Learned to use `DictVectorizer` for one-step encoding of categorical features.
+- Integrated preprocessing and modeling into a single pipeline using `Pipeline`.
+- Used `XGBRegressor` as the final estimator within the pipeline.
+
+### *Model Evaluation*
+
+- Applied 10-fold cross-validation to evaluate model performance.
+- Used negative mean squared error (MSE) as the scoring metric.
+- Converted MSE to root mean squared error (RMSE) for interpretability.
+- Compared performance between XGBoost and Random Forest regressors.
+
+---
+
+## Chronic Kidney Disease Case Study
+
+### *Handling Missing Data*
+
+- Explored the `sklearn_pandas` library for advanced pipeline construction.
+- Used `DataFrameMapper` to apply `SimpleImputer` to numeric and categorical columns separately.
+- Enabled DataFrame input/output for compatibility with pandas.
+
+### *Feature Union*
+
+- Combined numeric and categorical transformations using `FeatureUnion`.
+- Created a unified feature preprocessing block for downstream modeling.
+
+### *Full Pipeline Integration*
+
+- Built a complete pipeline including:
+  - Feature union of imputed columns
+  - Conversion to dictionary format using a custom `Dictifier`
+  - Encoding with `DictVectorizer`
+  - Classification using `XGBClassifier`
+- Evaluated model performance using 3-fold cross-validation and ROC AUC.
+
+---
+
+## Hyperparameter Tuning
+
+### *Gradient Boosting and XGBoost*
+
+- Constructed pipelines for both `GradientBoostingRegressor` and `XGBRegressor`.
+- Defined parameter grids for learning rate, max depth, subsample ratio, and number of estimators.
+- Used `RandomizedSearchCV` for efficient hyperparameter search.
+- Evaluated models using RMSE and selected best estimators.
+
+---
+
+## Key Concepts Learned
+
+- Importance of preprocessing within pipelines for reproducibility
+- Handling missing values with `SimpleImputer`
+- Encoding categorical features using `DictVectorizer`
+- Combining transformations with `FeatureUnion`
+- Cross-validation for model evaluation
+- Hyperparameter tuning with `RandomizedSearchCV`
+- Comparative performance analysis of XGBoost vs Gradient Boosting
+
+---
+
+## Installation Notes
+
+To run these workflows on Ubuntu:
+
+```bash
+pip install pandas numpy scikit-learn xgboost sklearn-pandas liac-arff
 
 
 
